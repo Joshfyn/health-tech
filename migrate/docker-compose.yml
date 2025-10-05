@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: health-tech-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: health-tech
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - health-tech-network
+
+  init:
+    build:
+      context: ..
+      dockerfile: migrate/Dockerfile
+    container_name: health-tech-init
+    depends_on:
+      - mongodb
+    environment:
+      MONGODB_URI: mongodb://admin:password123@mongodb:27017/health-tech?authSource=admin
+    networks:
+      - health-tech-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  health-tech-network:
+    driver: bridge
