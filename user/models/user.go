@@ -1,15 +1,9 @@
 package models
 
 import (
-	"errors"
-	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/gofrs/uuid"
 )
 
 // UserRole represents the different user roles in the system
@@ -23,6 +17,9 @@ const (
 	RolePharmacyAdmin UserRole = "pharmacy_admin"
 	RoleSuperAdmin    UserRole = "super_admin"
 )
+
+// TODO: SA can onboard every one. RHA snd RPA
+// TODO: Super Admin can onboard every one. RHA snd RPA
 
 // EntityType represents the type of entity a user is affiliated with
 type EntityType string
@@ -49,19 +46,16 @@ type Address struct {
 
 // User represents a user in the health-tech system
 type User struct {
-	ID            primitive.ObjectID  `bson:"_id,omitempty" json:"id,omitempty"`
-	Email         string              `bson:"email" json:"email" validate:"required,email"`
-	PasswordHash  string              `bson:"passwordHash" json:"-"`
-	Role          UserRole            `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
-	FirstName     string              `bson:"firstName" json:"firstName" validate:"required,min=1,max=50"`
-	LastName      string              `bson:"lastName" json:"lastName" validate:"required,min=1,max=50"`
-	DateOfBirth   *time.Time          `bson:"dateOfBirth,omitempty" json:"dateOfBirth,omitempty"`
-	EntityID      *primitive.ObjectID `bson:"entityId,omitempty" json:"entityId,omitempty"`
-	EntityType    *EntityType         `bson:"entityType,omitempty" json:"entityType,omitempty"`
-	LicenseNumber *string             `bson:"licenseNumber,omitempty" json:"licenseNumber,omitempty"`
-	Contact       Contact             `bson:"contact" json:"contact" validate:"required"`
-	IsActive      bool                `bson:"isActive" json:"isActive"`
-	LastLogin     *time.Time          `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
-	CreatedAt     time.Time           `bson:"createdAt" json:"createdAt"`
-	UpdatedAt     time.Time           `bson:"updatedAt" json:"updatedAt"`
+	ID           uuid.UUID  `bson:"_id,omitempty" json:"id,omitempty"`
+	Email        string     `bson:"email" json:"email" validate:"required,email"`
+	PasswordHash string     `bson:"passwordHash" json:"-"`
+	Role         UserRole   `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
+	FirstName    string     `bson:"firstName" json:"firstName" validate:"required,min=1,max=50"`
+	LastName     string     `bson:"lastName" json:"lastName" validate:"required,min=1,max=50"`
+	DateOfBirth  *time.Time `bson:"dateOfBirth,omitempty" json:"dateOfBirth,omitempty"`
+	Contact      Contact    `bson:"contact" json:"contact" validate:"required"`
+	IsActive     bool       `bson:"isActive" json:"isActive"`
+	LastLogin    *time.Time `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
+	CreatedAt    time.Time  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt    time.Time  `bson:"updatedAt" json:"updatedAt"`
 }

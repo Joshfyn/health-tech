@@ -17,7 +17,8 @@ docker-compose up
 docker-compose up -d
 ```
 
-# Connect to mongo db withe following
+# Connect to mongo db wit the following in the env variables
     MONGO_INITDB_ROOT_USERNAME: admin
     MONGO_INITDB_ROOT_PASSWORD: password123
     MONGO_INITDB_DATABASE: health-tech
+    
