@@ -1,17 +1,16 @@
 package services
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"time"
+	clog "health-tech/logger"
 
-	"health-tech/user/models"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// UserService handles user-related database operations
+type UserService struct {
+	DB     *mongo.Database
+	Logger clog.Clog
+}
+
+func (u *UserService) NewUserService(db *mongo.Database) {
+	u.Logger.Errorf(nil, "NewUserService")
+}
