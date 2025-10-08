@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"health-tech/user/models"
+	"health-tech/user/model"
 
 	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -86,16 +86,16 @@ func createSampleUsers(ctx context.Context, db *mongo.Database) error {
 			"id":           patientID,
 			"email":        "john.doe@example.com",
 			"passwordHash": string(hashedPassword),
-			"role":         models.RoleSuperAdmin,
+			"role":         model.RoleSuperAdmin,
 			"firstName":    "John",
 			"lastName":     "Doe",
 			"dateOfBirth": func() *time.Time {
 				dob := time.Date(1990, 5, 15, 0, 0, 0, 0, time.UTC)
 				return &dob
 			}(),
-			"contact": models.Contact{
+			"contact": model.Contact{
 				Phone: "+1-555-0101",
-				Address: models.Address{
+				Address: model.Address{
 					Street:  "123 Main St",
 					City:    "New York",
 					State:   "NY",
@@ -112,14 +112,14 @@ func createSampleUsers(ctx context.Context, db *mongo.Database) error {
 			"id":            doctorID,
 			"email":         "dr.smith@hospital.com",
 			"passwordHash":  string(hashedPassword),
-			"role":          models.RoleHospitalAdmin,
+			"role":          model.RoleHospitalAdmin,
 			"firstName":     "Jane",
 			"lastName":      "Smith",
-			"entityType":    func() *models.EntityType { et := models.EntityHospital; return &et }(),
+			"entityType":    func() *model.EntityType { et := model.EntityHospital; return &et }(),
 			"licenseNumber": func() *string { ln := "MD123456"; return &ln }(),
-			"contact": models.Contact{
+			"contact": model.Contact{
 				Phone: "+1-555-0201",
-				Address: models.Address{
+				Address: model.Address{
 					Street:  "456 Medical Ave",
 					City:    "Boston",
 					State:   "MA",
@@ -136,14 +136,14 @@ func createSampleUsers(ctx context.Context, db *mongo.Database) error {
 			"id":            pharmacistID,
 			"email":         "pharmacist@pharmacy.com",
 			"passwordHash":  string(hashedPassword),
-			"role":          models.RolePharmacyAdmin,
+			"role":          model.RolePharmacyAdmin,
 			"firstName":     "Mike",
 			"lastName":      "Johnson",
-			"entityType":    func() *models.EntityType { et := models.EntityPharmacy; return &et }(),
+			"entityType":    func() *model.EntityType { et := model.EntityPharmacy; return &et }(),
 			"licenseNumber": func() *string { ln := "RPH789012"; return &ln }(),
-			"contact": models.Contact{
+			"contact": model.Contact{
 				Phone: "+1-555-0301",
-				Address: models.Address{
+				Address: model.Address{
 					Street:  "789 Pharmacy St",
 					City:    "Chicago",
 					State:   "IL",
