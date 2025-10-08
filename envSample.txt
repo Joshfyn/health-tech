@@ -1,0 +1,4 @@
+Copy env variables to .env file
+MONGO_USER=insert_here
+MONGO_PASSWORD=insert_here
+MONGO_HOST=insert_here // You can leave the host empty
