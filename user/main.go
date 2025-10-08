@@ -4,27 +4,46 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
-	"health-tech/models"
-	"health-tech/services"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"health-tech/lib/db"
+	clog "health-tech/logger"
+	"health-tech/user/services"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func main() {
-	// Connect to MongoDB
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://localhost:27017"))
-	if err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
+
+	userService := services.UserService{
+		DB:     db.ConnectToDB(),
+		Logger: *clog.MustNew("user", ""),
 	}
-	defer client.Disconnect(context.TODO())
 
-	// Get database
-	db := client.Database("health-tech")
-
-	// Create user service
-	userService := services.NewUserService(db)
+	// Show database tables and rows
+	fmt.Println("Database tables and rows:")
+	fmt.Println("=========================")
+	tableNames, err := userService.DB.ListCollectionNames(context.TODO(), bson.M{})
+	if err != nil {
+		log.Fatal("Failed to list collection names:", err)
+	}
+	for _, table := range tableNames {
+		fmt.Println(table)
+	}
+	fmt.Println("=========================")
+	// Get all rows from each table
+	for _, table := range tableNames {
+		fmt.Println(table)
+		rows, err := userService.DB.Collection(table).Find(context.TODO(), bson.M{})
+		if err != nil {
+			log.Fatal("Failed to list collection names:", err)
+		}
+		for rows.Next(context.TODO()) {
+			var row bson.M
+			if err := rows.Decode(&row); err != nil {
+				log.Fatal("Failed to decode row:", err)
+			}
+			fmt.Println(row)
+		}
+	}
 
 }

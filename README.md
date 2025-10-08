@@ -17,8 +17,17 @@ docker-compose up
 docker-compose up -d
 ```
 
-# Connect to mongo db wit the following in the env variables
+# Connect to mongo db with the following
     MONGO_INITDB_ROOT_USERNAME: admin
     MONGO_INITDB_ROOT_PASSWORD: password123
     MONGO_INITDB_DATABASE: health-tech
-    
+
+# To run the user API
+Copy the envSample.txt to .env file and provide the env vars values
+```bash
+export $(cat .env | xargs)
+```
+The use the command to build and run the API
+```bash
+go run main.go
+```
