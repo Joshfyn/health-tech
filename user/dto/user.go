@@ -12,6 +12,7 @@ type CreateNewUserNoPwdRequest struct {
 	LastName    string        `json:"lastName" validate:"required,min=1,max=50"`
 	DateOfBirth *time.Time    `json:"dateOfBirth" validate:"required"`
 	Contact     model.Contact `json:"contact" validate:"required"`
+	Password    string        `json:"password" validate:"required"`
 }
 
 type CreateNewUserNoPwdResponse struct {

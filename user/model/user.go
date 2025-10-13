@@ -50,7 +50,7 @@ type Address struct {
 // User represents a user in the health-tech system
 type User struct {
 	ID                uuid.UUID  `bson:"id,omitempty" json:"id,omitempty"`
-	Email             string     `bson:"email" json:"email" validate:"required,email"`
+	Email             string     `bson:"email" json:"email" validate:"required,email"` // set unique index
 	PasswordHash      string     `bson:"passwordHash" json:"-"`
 	Role              UserRole   `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
 	FirstName         string     `bson:"firstName" json:"firstName" validate:"required,min=1,max=50"`
@@ -59,15 +59,15 @@ type User struct {
 	Contact           Contact    `bson:"contact" json:"contact" validate:"required"`
 	IsActive          bool       `bson:"isActive" json:"isActive"`
 	ConfirmationToken string     `bson:"confirmationToken,omitempty" json:"confirmationToken,omitempty"`
-	ConfirmedAt       *time.Time `bson:"confirmedAt,omitempty" json:"confirmedAt,omitempty"`
+	IsConfirmed       bool       `bson:"isConfirmed" json:"isConfirmed"`
 	LastLogin         *time.Time `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
 	CreatedAt         time.Time  `bson:"createdAt" json:"createdAt"`
 	UpdatedAt         time.Time  `bson:"updatedAt" json:"updatedAt"`
 }
 
-func (u *User) CreateNewUserNoPwd(db *mongo.Database) error {
+func (u *User) CreateNewUserNoPwd(db *mongo.Database, sessCtx mongo.SessionContext) error {
 	collection := db.Collection("users")
-	_, err := collection.InsertOne(context.Background(), u)
+	_, err := collection.InsertOne(sessCtx, u)
 	if err != nil {
 		return err
 	}
@@ -93,4 +93,35 @@ func (u *User) GetUsers(db *mongo.Database) ([]User, error) {
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+func GetUserByEmail(db *mongo.Database, email string) (*User, error) {
+	collection := db.Collection("users")
+	var user User
+	err := collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (u *User) DeleteUser(db *mongo.Database) error {
+	collection := db.Collection("users")
+	_, err := collection.DeleteOne(context.Background(), bson.M{"email": u.Email})
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (u *User) ConfirmUser(db *mongo.Database, token string) error {
+	collection := db.Collection("users")
+	_, err := collection.UpdateOne(context.Background(), bson.M{"email": u.Email}, bson.M{"$set": bson.M{"isConfirmed": true}})
+	if err != nil {
+		return err
+	}
+	return nil
 }

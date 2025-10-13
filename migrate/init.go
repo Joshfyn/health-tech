@@ -17,7 +17,7 @@ import (
 
 func main() {
 	// Get MongoDB URI from environment variable or use default
-	mongoURI := "mongodb://admin:password123@localhost:27017/health-tech?authSource=admin"
+	mongoURI := "mongodb://admin:password123@localhost:27017/health-tech?authSource=admin&replicaSet=rs0"
 	if envURI := os.Getenv("MONGODB_URI"); envURI != "" {
 		mongoURI = envURI
 	}
