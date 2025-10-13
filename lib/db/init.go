@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"health-tech/lib"
 	"log"
 	"os"
 
@@ -16,12 +17,15 @@ func ConnectToDB() *mongo.Database {
 	mongoPassword := os.Getenv("MONGO_PASSWORD")
 	mongoHost := os.Getenv("MONGO_HOST")
 	if mongoHost == "" {
-		mongoHost = "localhost:27017"
+		mongoHost = "localhost:27017/?replicaSet=rs0"
 	}
-	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s", mongoUser, mongoPassword, mongoHost)
-
+	mongoURI := "mongodb://localhost:27017/?replicaSet=rs0"
+	if lib.IsProduction() {
+		mongoURI = fmt.Sprintf("mongodb://%s:%s@%s", mongoUser, mongoPassword, mongoHost)
+	}
+	clientOptions := options.Client().ApplyURI(mongoURI)
 	// Connect to MongoDB
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(mongoURI))
+	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal("Failed to connect to MongoDB:", err)
 	}
