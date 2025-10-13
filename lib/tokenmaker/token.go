@@ -16,6 +16,7 @@ const (
 type TokenRequirements struct {
 	Email  string
 	UserID string
+	Role   string
 }
 
 type TokenClaims struct {
@@ -47,6 +48,9 @@ func GenerateToken(tokenRequirements TokenRequirements) (string, error) {
 	if tokenRequirements.UserID != "" {
 		claims.TokenRequirements.UserID = tokenRequirements.UserID
 	}
+	if tokenRequirements.Role != "" {
+		claims.TokenRequirements.Role = tokenRequirements.Role
+	}
 
 	// Declare the token with the claims and the signing method (HMAC SHA256)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -62,7 +66,7 @@ func GenerateToken(tokenRequirements TokenRequirements) (string, error) {
 }
 
 // ValidateVerificationToken validates the token string and returns the email if valid.
-func ValidateVerificationToken(tokenString string) (string, error) {
+func ValidateVerificationToken(tokenString string) (TokenClaims, error) {
 	claims := &TokenClaims{}
 
 	// Parse the token, automatically checking the signature and expiration time (TTL)
@@ -78,13 +82,13 @@ func ValidateVerificationToken(tokenString string) (string, error) {
 	if err != nil {
 		// If the token is invalid (bad signature) OR expired (TTL check failed), an error is returned here.
 		// Common errors include: "token is expired" or "signature is invalid".
-		return "", fmt.Errorf("token validation failed: %w", err)
+		return TokenClaims{}, fmt.Errorf("token validation failed: %w", err)
 	}
 
 	if !token.Valid {
-		return "", fmt.Errorf("token is invalid")
+		return TokenClaims{}, fmt.Errorf("token is invalid")
 	}
 
 	// TTL check is handled automatically by jwt.ParseWithClaims()
-	return claims.Email, nil
+	return *claims, nil
 }
