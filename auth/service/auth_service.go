@@ -14,4 +14,3 @@ type AuthService struct {
 	DB     *mongo.Database
 	Logger clog.Clog
 }
-// X-USER-TOKEN

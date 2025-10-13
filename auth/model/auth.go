@@ -10,9 +10,10 @@ import (
 )
 
 type Auth struct {
-	UserID       string `json:"-"`
-	Email        string `json:"-"`
-	PasswordHash string `json:"-"`
+	UserID       string         `json:"-"`
+	Email        string         `json:"-"`
+	Role         model.UserRole `json:"-"`
+	PasswordHash string         `json:"-"`
 }
 
 func (a *Auth) GetUserByEmail(db *mongo.Database) error {
@@ -30,5 +31,6 @@ func (a *Auth) GetUserByEmail(db *mongo.Database) error {
 	}
 	a.UserID = user.ID.String()
 	a.PasswordHash = user.PasswordHash
+	a.Role = user.Role
 	return nil
 }
