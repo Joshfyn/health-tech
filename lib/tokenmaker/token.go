@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	tokenExpiry = 1 * time.Hour
+	tokenExpiry = 2 * time.Hour // 2 hours
 )
 
 type TokenRequirements struct {
@@ -26,7 +26,7 @@ type TokenClaims struct {
 
 var jwtSecret []byte = []byte(os.Getenv("JWT_SECRET"))
 
-// GenerateToken creates a JWT with a 1-hour expiration time.
+// GenerateToken creates a JWT with a 2-hour expiration time.
 func GenerateToken(tokenRequirements TokenRequirements) (string, error) {
 	// Token expires 1 hour from now
 	expirationTime := time.Now().Add(tokenExpiry)
