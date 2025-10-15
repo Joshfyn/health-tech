@@ -27,8 +27,4 @@ WORKDIR /root/
 COPY --from=builder /app/user-service .
 
 # Expose the port the service runs on
-EXPOSE 8080
-
-# Run the user service
-CMD ["./user-service"]
-
+EXPOSE 80

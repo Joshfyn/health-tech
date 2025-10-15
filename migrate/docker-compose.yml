@@ -11,7 +11,7 @@ services:
       - mongodb_data:/data/db
     networks:
       - health-tech-network
-    command: mongod --replSet rs0
+    command: mongod --replSet rs0 --bind_ip_all --port 27017
 
   init:
     build:
@@ -32,4 +32,3 @@ volumes:
 networks:
   health-tech-network:
     driver: bridge
-    

@@ -23,7 +23,7 @@ docker-compose up -d
 Create a `docker.env` file in the project root for Docker containers:
 
 ```bash
-MONGO_HOST=host.docker.internal:27017/?replicaSet=rs0
+MONGO_URI=mongodb://mongodb:27017/health-tech?replicaSet=rs0
 USER_SERVICE_PORT=8080
 AUTH_SERVICE_PORT=8081
 JWT_SECRET=your-jwt-secret-here
@@ -34,9 +34,8 @@ SMTP_USER=your-email@example.com
 > **Note:** The `docker.env` file is formatted for Docker (no `export` statements). This is different from `env.sh` which is used for local development.
 
 **Important MongoDB Host Settings:**
-- If MongoDB is running locally (not in Docker): Use `host.docker.internal:27017/?replicaSet=rs0`
-- If MongoDB is in a Docker network: Use the container name (e.g., `mongo:27017/?replicaSet=rs0`) and run services with `--network`
-- If NOT using a replica set: Remove `?replicaSet=rs0` from `MONGO_HOST`
+- If MongoDB is running locally (not in Docker): Set Mongo host as `localhost:27017/?replicaSet=rs0`
+- 
 
 ### 3. Build and Run User Service
 
@@ -45,10 +44,12 @@ SMTP_USER=your-email@example.com
 docker build -t user-service -f user/Dockerfile .
 
 # Run the container
-docker run --env-file ./docker.env -p 8080:8080 user-service
-
-# Or run in background (detached mode)
-docker run -d --env-file ./docker.env -p 8080:8080 --name user-service user-service
+docker run -d \
+ --name user-service-container \
+ -p 8080:80 \
+ --env-file docker.env \
+ --network migrate_health-tech-network \
+ user-service ./user-service
 ```
 
 **Access User Service:** `http://localhost:8080`
@@ -60,13 +61,15 @@ docker run -d --env-file ./docker.env -p 8080:8080 --name user-service user-serv
 docker build -t auth-service -f auth/Dockerfile .
 
 # Run the container
-docker run --env-file ./docker.env -p 8081:8081 auth-service
-
-# Or run in background (detached mode)
-docker run -d --env-file ./docker.env -p 8081:8081 --name auth-service auth-service
+docker run -d \
+ --name auth-service-container \
+ -p 8080:80 \
+ --env-file docker.env \
+ --network migrate_health-tech-network \
+ auth-service ./auth-service
 ```
 
-## 💻 Local Development (Without Docker)
+## Local Development (Without Docker)
 
 ### Setup Local Environment
 
