@@ -63,7 +63,7 @@ docker build -t auth-service -f auth/Dockerfile .
 # Run the container
 docker run -d \
  --name auth-service-container \
- -p 8080:80 \
+ -p 8081:80 \
  --env-file docker.env \
  --network migrate_health-tech-network \
  auth-service ./auth-service
