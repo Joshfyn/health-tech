@@ -107,15 +107,15 @@ func (svc *UserService) ConfirmUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "token is required"})
 		return
 	}
-	email, err := token.ValidateVerificationToken(tokenStr)
+	claims, err := token.ValidateVerificationToken(tokenStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	user := model.User{
-		Email: email,
+		Email: claims.Email,
 	}
-	err = user.ConfirmUser(svc.DB, tokenStr)
+	err = user.ConfirmUser(svc.DB)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

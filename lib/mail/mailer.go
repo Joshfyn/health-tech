@@ -48,7 +48,7 @@ func SendConfirmationEmail(recipientEmail, jwtToken string) error {
 				If the button doesn't work, copy and paste this link into your browser:<br>
 				<a href="%s">%s</a>
 			</p>
-			<p>The link will expire in 1 hour.</p>
+			<p>The link will expire in 2 hours.</p>
 		</body>
 		</html>
 	`, verificationURL, verificationURL, verificationURL)

@@ -117,7 +117,7 @@ func (u *User) DeleteUser(db *mongo.Database) error {
 	return nil
 }
 
-func (u *User) ConfirmUser(db *mongo.Database, token string) error {
+func (u *User) ConfirmUser(db *mongo.Database) error {
 	collection := db.Collection("users")
 	_, err := collection.UpdateOne(context.Background(), bson.M{"email": u.Email}, bson.M{"$set": bson.M{"isConfirmed": true}})
 	if err != nil {

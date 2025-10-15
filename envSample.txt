@@ -1,4 +1,7 @@
 Copy env variables to .env file
-MONGO_USER=insert_here
-MONGO_PASSWORD=insert_here
-MONGO_HOST=insert_here // You can leave the host empty
+MONGO_URI=*****
+USER_SERVICE_PORT=8080
+AUTH_SERVICE_PORT=8081
+JWT_SECRET=****
+SMTP_PASS=***
+SMTP_USER=***

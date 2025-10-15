@@ -12,15 +12,13 @@ import (
 )
 
 func ConnectToDB() *mongo.Database {
-	// Get MongoDB credentials from environment variables
-	mongoUser := os.Getenv("MONGO_USER")
-	mongoPassword := os.Getenv("MONGO_PASSWORD")
-	mongoHost := os.Getenv("MONGO_HOST")
-	if mongoHost == "" {
-		mongoHost = "localhost:27017/?replicaSet=rs0"
-	}
-	mongoURI := "mongodb://localhost:27017/?replicaSet=rs0"
+	var mongoUser, mongoPassword, mongoHost string
+	mongoURI := os.Getenv("MONGO_URI")
+	// Get MongoDB credentials from environment variables if in production environment
 	if lib.IsProduction() {
+		mongoHost = os.Getenv("MONGO_HOST")
+		mongoUser = os.Getenv("MONGO_USER")
+		mongoPassword = os.Getenv("MONGO_PASSWORD")
 		mongoURI = fmt.Sprintf("mongodb://%s:%s@%s", mongoUser, mongoPassword, mongoHost)
 	}
 	clientOptions := options.Client().ApplyURI(mongoURI)
