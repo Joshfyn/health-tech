@@ -69,6 +69,22 @@ func ValidateCreateProviderAccountRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+	authUser := c.MustGet(ReqBodyAuthUser).(*model.RoleAccount)
+	switch authUser.Role {
+	case model.RoleHospitalAdmin:
+		if req.Role != model.RoleDoctor {
+			log.Printf("Only hospital admins can create doctors accounts")
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			return
+		}
+	case model.RolePharmacyAdmin:
+		if req.Role != model.RolePharmacist {
+			log.Printf("Only pharmacy admins can create pharmacists accounts")
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			return
+		}
+	}
+
 	if req.Email == "" {
 		log.Printf("Email is required")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "email is required"})
