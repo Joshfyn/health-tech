@@ -17,8 +17,8 @@ type Auth struct {
 }
 
 func (a *Auth) GetUserByEmail(db *mongo.Database) error {
-	var user model.User
-	collection := db.Collection("users")
+	var user model.UserAccount
+	collection := db.Collection("userAccount")
 	err := collection.FindOne(context.Background(), bson.M{
 		"email":       a.Email,
 		"isConfirmed": true,
@@ -29,7 +29,7 @@ func (a *Auth) GetUserByEmail(db *mongo.Database) error {
 	if err != nil {
 		return err
 	}
-	a.UserID = user.ID.String()
+	a.UserID = user.UserAccountID.String()
 	a.PasswordHash = user.PasswordHash
 	a.Role = user.Role
 	return nil

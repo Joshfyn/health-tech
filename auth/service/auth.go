@@ -4,7 +4,6 @@ import (
 	"health-tech/auth/dto"
 	"health-tech/auth/middleware"
 	"health-tech/auth/model"
-	"log"
 	"net/http"
 
 	token "health-tech/lib/tokenmaker"
@@ -15,18 +14,13 @@ import (
 
 func (svc *AuthService) SignInUser(c *gin.Context) {
 	// Takes the user email and password
-	req := dto.SignInUserRequest{}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		svc.Logger.Errorf(c.Request, "Error binding JSON: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	req := c.MustGet(middleware.ReqBodySignInUser).(dto.SignInUserRequest)
 
 	// verify the email exists and the password is correct
 	var auth = model.Auth{
 		Email: req.Email,
 	}
-	log.Println("auth", auth)
+
 	err := auth.GetUserByEmail(svc.DB)
 	if err != nil {
 		svc.Logger.
