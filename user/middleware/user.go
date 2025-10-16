@@ -18,21 +18,23 @@ import (
 func ValidateCreateProviderAccountRequest(c *gin.Context) {
 	authToken := c.GetHeader("X-USER-TOKEN")
 	if authToken == "" {
+		log.Printf("No token provided")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		c.Abort()
 		return
 	}
-	claims, err := token.ValidateVerificationToken(authToken)
+	authUser, err := token.ValidateVerificationToken(authToken)
 	if err != nil {
+		log.Printf("Error validating token: %v", err)
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	if claims.Role != string(model.RoleSuperAdmin) {
+	if authUser.Role != string(model.RoleSuperAdmin) {
 		log.Printf("Only super admins can create provider accounts")
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
 		return
 	}
-
+	
 	req := dto.CreateProviderAccountRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -43,6 +45,12 @@ func ValidateCreateProviderAccountRequest(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "email is required"})
 		return
 	}
+	if req.UserID == uuid.Nil {
+		log.Printf("User ID is required")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "user id is required"})
+		return
+	}
+
 	if req.Role != model.RoleDoctor && req.Role != model.RolePharmacist && req.Role != model.RoleHospitalAdmin && req.Role != model.RolePharmacyAdmin {
 		log.Printf("Invalid role: %s Only doctors, pharmacists, hospital admins, and pharmacy admins can be created", req.Role)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "bad request"})
@@ -60,13 +68,13 @@ func ValidateCreateProviderAccountRequest(c *gin.Context) {
 		return
 	}
 	req.PasswordHash = string(passwordHash)
-	userAccountID, err := uuid.NewV4()
+	roleAccountID, err := uuid.NewV4()
 	if err != nil {
 		log.Printf("Error generating user ID: %v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
 		return
 	}
-	req.UserAccountID = userAccountID
+	req.RoleAccountID = roleAccountID
 	c.Set(ReqBodyCreateProviderAccount, req)
 	c.Next()
 }
@@ -92,7 +100,7 @@ func ValidateCreateNewUserAccountRequest(c *gin.Context) {
 		return
 	}
 	// TODO: Only super admin can create new users
-	
+
 	if req.Password == "" {
 		log.Printf("Password is required")
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "password is required"})

@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -60,8 +61,8 @@ type User struct {
 	UpdatedAt    time.Time  `bson:"updatedAt" json:"updatedAt"`
 }
 
-type UserAccount struct {
-	UserAccountID     uuid.UUID `bson:"userAccountID" json:"userAccountID" validate:"required"`
+type RoleAccount struct {
+	RoleAccountID     uuid.UUID `bson:"roleAccountID" json:"roleAccountID" validate:"required"`
 	UserID            uuid.UUID `bson:"userId" json:"userId" validate:"required"`
 	Email             string    `bson:"email" json:"email" validate:"required,email"`
 	Role              UserRole  `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
@@ -84,8 +85,8 @@ func (u *User) CreateNewUser(db *mongo.Database, sessCtx mongo.SessionContext) e
 	return nil
 }
 
-func (u *UserAccount) CreateNewUserAccount(db *mongo.Database, sessCtx mongo.SessionContext) error {
-	collection := db.Collection("userAccount")
+func (u *RoleAccount) CreateNewUserAccount(db *mongo.Database, sessCtx mongo.SessionContext) error {
+	collection := db.Collection("roleAccount")
 	_, err := collection.InsertOne(sessCtx, u)
 	if err != nil {
 		return err
@@ -93,8 +94,8 @@ func (u *UserAccount) CreateNewUserAccount(db *mongo.Database, sessCtx mongo.Ses
 	return nil
 }
 
-func (u *UserAccount) CreateNewUserAccountWithoutTransaction(db *mongo.Database) error {
-	collection := db.Collection("userAccount")
+func (u *RoleAccount) CreateNewUserAccountWithoutTransaction(db *mongo.Database) error {
+	collection := db.Collection("roleAccount")
 	_, err := collection.InsertOne(context.Background(), u)
 	if err != nil {
 		return err
@@ -103,7 +104,7 @@ func (u *UserAccount) CreateNewUserAccountWithoutTransaction(db *mongo.Database)
 }
 
 func (u *User) GetUsers(db *mongo.Database) ([]User, error) {
-	collection := db.Collection("users")
+	collection := db.Collection("user")
 	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, err
@@ -125,7 +126,13 @@ func (u *User) GetUsers(db *mongo.Database) ([]User, error) {
 func (u *User) GetSingleUser(db *mongo.Database) error {
 	collection := db.Collection("user")
 	var user User
-	filter := bson.M{"email": u.PrimaryEmail}
+	if u.PrimaryEmail == "" && u.ID == uuid.Nil {
+		return errors.New("email and/or id must be provided")
+	}
+	filter := bson.M{}
+	if u.PrimaryEmail != "" {
+		filter = bson.M{"email": u.PrimaryEmail}
+	}
 	if u.ID != uuid.Nil {
 		filter["id"] = u.ID
 	}
@@ -136,8 +143,8 @@ func (u *User) GetSingleUser(db *mongo.Database) error {
 	return nil
 }
 
-func (u *UserAccount) ConfirmUser(db *mongo.Database) error {
-	collection := db.Collection("userAccount")
+func (u *RoleAccount) ConfirmUser(db *mongo.Database) error {
+	collection := db.Collection("roleAccount")
 	filter := bson.M{"email": u.Email, "userId": u.UserID, "role": u.Role}
 	update := bson.M{"$set": bson.M{"isConfirmed": true}}
 	_, err := collection.UpdateOne(context.Background(), filter, update)
@@ -145,4 +152,25 @@ func (u *UserAccount) ConfirmUser(db *mongo.Database) error {
 		return err
 	}
 	return nil
+}
+
+func (u *RoleAccount) GetAllUserRoles(db *mongo.Database) (map[UserRole]any, error) {
+	collection := db.Collection("roleAccount")
+	filter := bson.M{"userId": u.UserID}
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	userRoles := make(map[UserRole]any)
+	for cursor.Next(context.Background()) {
+		var userAccount RoleAccount
+		err := cursor.Decode(&userAccount)
+		if err != nil {
+			return nil, err
+		}
+		userRoles[userAccount.Role] = nil
+	}
+	return userRoles, nil
 }

@@ -28,8 +28,9 @@ type CreateProviderAccountRequest struct {
 	Email         string         `json:"email"`
 	Role          model.UserRole `json:"role"`
 	Password      string         `json:"password"`
+	UserID        uuid.UUID      `json:"userId"`
 	PasswordHash  string         `json:"-"`
-	UserAccountID uuid.UUID      `json:"-"`
+	RoleAccountID uuid.UUID      `json:"-"`
 }
 
 type PutNewPasswordResponse struct {

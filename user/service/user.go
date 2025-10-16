@@ -7,7 +7,6 @@ import (
 	"health-tech/user/dto"
 	"health-tech/user/middleware"
 
-	//"health-tech/user/middleware"
 	"health-tech/user/model"
 	"net/http"
 
@@ -56,7 +55,7 @@ func (svc *UserService) CreateNewUserAccount(c *gin.Context) {
 
 		if req.Role == model.RolePatient || req.Role == model.RoleSuperAdmin {
 			// automatically create a patient and super admin account
-			patientAccount := model.UserAccount{
+			patientAccount := model.RoleAccount{
 				Email:        user.PrimaryEmail,
 				Role:         req.Role,
 				UserID:       user.ID,
@@ -69,11 +68,12 @@ func (svc *UserService) CreateNewUserAccount(c *gin.Context) {
 				svc.Logger.Errorf(c.Request, "Error creating patient account: %v", err)
 				return nil, fmt.Errorf("create patient account failed: %w", err)
 			}
-		}
-		err = mail.SendConfirmationEmail(user.PrimaryEmail, token)
-		if err != nil {
-			svc.Logger.Errorf(c.Request, "Error sending confirmation email: %v", err)
-			return nil, fmt.Errorf("send confirmation email failed: %w", err)
+
+			err = mail.SendConfirmationEmail(user.PrimaryEmail, token)
+			if err != nil {
+				svc.Logger.Errorf(c.Request, "Error sending confirmation email: %v", err)
+				return nil, fmt.Errorf("send confirmation email failed: %w", err)
+			}
 		}
 
 		return nil, nil
@@ -100,9 +100,9 @@ func (svc *UserService) GetUsers(c *gin.Context) {
 func (svc *UserService) CreateProviderAccount(c *gin.Context) {
 	req := c.MustGet(middleware.ReqBodyCreateProviderAccount).(dto.CreateProviderAccountRequest)
 
-	// verify the email exists in user
+	// verify the email exists in user the user table
 	user := model.User{
-		PrimaryEmail: req.Email,
+		ID: req.UserID,
 	}
 	err := user.GetSingleUser(svc.DB)
 	if err != nil {
@@ -111,12 +111,35 @@ func (svc *UserService) CreateProviderAccount(c *gin.Context) {
 		return
 	}
 
-	token, err := token.GenerateToken(token.TokenRequirements{Email: req.Email, UserID: req.UserAccountID.String(), Role: string(req.Role)})
+	// verify the user does not have the same role created before
+	account := model.RoleAccount{
+		RoleAccountID: req.RoleAccountID,
+		UserID:        req.UserID,
+		Email:         req.Email,
+		Role:          req.Role,
+		PasswordHash:  req.PasswordHash,
+		IsConfirmed:   false,
+		IsActive:      true,
+	}
+	userRoles, err := account.GetAllUserRoles(svc.DB)
+	if err != nil {
+		svc.Logger.Errorf(c.Request, "Error getting user roles: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
+		return
+	}
+	if _, ok := userRoles[req.Role]; ok {
+		svc.Logger.Errorf(c.Request, "User already has this role: %s", req.Role)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already has this role"})
+		return
+	}
+
+	token, err := token.GenerateToken(token.TokenRequirements{Email: req.Email, UserID: req.RoleAccountID.String(), Role: string(req.Role)})
 	if err != nil {
 		svc.Logger.Errorf(c.Request, "Error generating verification token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "internal server error"})
 		return
 	}
+	account.ConfirmationToken = token
 
 	session, err := svc.DB.Client().StartSession()
 	if err != nil {
@@ -127,16 +150,7 @@ func (svc *UserService) CreateProviderAccount(c *gin.Context) {
 	defer session.EndSession(context.TODO())
 
 	_, err = session.WithTransaction(context.Background(), func(sessCtx mongo.SessionContext) (any, error) {
-		account := model.UserAccount{
-			UserAccountID:     req.UserAccountID,
-			Email:             req.Email,
-			Role:              req.Role,
-			UserID:            user.ID,
-			PasswordHash:      req.PasswordHash,
-			ConfirmationToken: token,
-			IsConfirmed:       false,
-			IsActive:          true,
-		}
+
 		err = account.CreateNewUserAccount(svc.DB, sessCtx)
 		if err != nil {
 			svc.Logger.Errorf(c.Request, "Error creating patient account: %v", err)
@@ -175,11 +189,17 @@ func (svc *UserService) ConfirmUser(c *gin.Context) {
 	}
 	err = user.GetSingleUser(svc.DB)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		if err == mongo.ErrNoDocuments {
+			svc.Logger.Errorf(c.Request, "User not found: %v", err)
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		svc.Logger.Errorf(c.Request, "Error getting user: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
-	userAccount := model.UserAccount{
+	userAccount := model.RoleAccount{
 		Email:             claims.Email,
 		Role:              model.UserRole(claims.Role),
 		UserID:            uuid.FromStringOrNil(claims.UserID),
