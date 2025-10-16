@@ -49,29 +49,56 @@ type Address struct {
 
 // User represents a user in the health-tech system
 type User struct {
-	ID                uuid.UUID  `bson:"id,omitempty" json:"id,omitempty"`
-	Email             string     `bson:"email" json:"email" validate:"required,email"` // set unique index
-	PasswordHash      string     `bson:"passwordHash" json:"-"`
-	Role              UserRole   `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
-	FirstName         string     `bson:"firstName" json:"firstName" validate:"required,min=1,max=50"`
-	LastName          string     `bson:"lastName" json:"lastName" validate:"required,min=1,max=50"`
-	DateOfBirth       *time.Time `bson:"dateOfBirth,omitempty" json:"dateOfBirth,omitempty"`
-	Contact           Contact    `bson:"contact" json:"contact" validate:"required"`
-	IsActive          bool       `bson:"isActive" json:"isActive"`
-	ConfirmationToken string     `bson:"confirmationToken,omitempty" json:"confirmationToken,omitempty"`
-	IsConfirmed       bool       `bson:"isConfirmed" json:"isConfirmed"`
-	LastLogin         *time.Time `bson:"lastLogin,omitempty" json:"lastLogin,omitempty"`
-	CreatedAt         time.Time  `bson:"createdAt" json:"createdAt"`
-	UpdatedAt         time.Time  `bson:"updatedAt" json:"updatedAt"`
+	ID           uuid.UUID  `bson:"id,omitempty" json:"id,omitempty"`
+	PrimaryEmail string     `bson:"email" json:"email" validate:"required,email"` // set unique index
+	FirstName    string     `bson:"firstName" json:"firstName" validate:"required,min=1,max=50"`
+	LastName     string     `bson:"lastName" json:"lastName" validate:"required,min=1,max=50"`
+	DateOfBirth  *time.Time `bson:"dateOfBirth,omitempty" json:"dateOfBirth,omitempty"`
+	Contact      Contact    `bson:"contact" json:"contact" validate:"required"`
+	NationalID   string     `bson:"nationalID" json:"nationalID" validate:"required"`
+	CreatedAt    time.Time  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt    time.Time  `bson:"updatedAt" json:"updatedAt"`
 }
 
-func (u *User) CreateNewUserNoPwd(db *mongo.Database, sessCtx mongo.SessionContext) error {
-	collection := db.Collection("users")
+type UserAccount struct {
+	UserAccountID     uuid.UUID `bson:"userAccountID" json:"userAccountID" validate:"required"`
+	UserID            uuid.UUID `bson:"userId" json:"userId" validate:"required"`
+	Email             string    `bson:"email" json:"email" validate:"required,email"`
+	Role              UserRole  `bson:"role" json:"role" validate:"required,oneof=patient doctor pharmacist hospital_admin pharmacy_admin super_admin"`
+	IsActive          bool      `bson:"isActive" json:"isActive" validate:"required"`
+	IsConfirmed       bool      `bson:"isConfirmed" json:"isConfirmed" validate:"required"`
+	ConfirmationToken string    `bson:"confirmationToken" json:"confirmationToken" validate:"required"`
+	PasswordHash      string    `bson:"passwordHash" json:"passwordHash" validate:"required"`
+	LastLogin         time.Time `bson:"lastLogin" json:"lastLogin" validate:"required"`
+	CreatedAt         time.Time `bson:"createdAt" json:"createdAt"`
+	UpdatedAt         time.Time `bson:"updatedAt" json:"updatedAt"`
+}
+
+func (u *User) CreateNewUser(db *mongo.Database, sessCtx mongo.SessionContext) error {
+	collection := db.Collection("user")
 	_, err := collection.InsertOne(sessCtx, u)
 	if err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (u *UserAccount) CreateNewUserAccount(db *mongo.Database, sessCtx mongo.SessionContext) error {
+	collection := db.Collection("userAccount")
+	_, err := collection.InsertOne(sessCtx, u)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *UserAccount) CreateNewUserAccountWithoutTransaction(db *mongo.Database) error {
+	collection := db.Collection("userAccount")
+	_, err := collection.InsertOne(context.Background(), u)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -95,31 +122,25 @@ func (u *User) GetUsers(db *mongo.Database) ([]User, error) {
 	return users, nil
 }
 
-func GetUserByEmail(db *mongo.Database, email string) (*User, error) {
-	collection := db.Collection("users")
+func (u *User) GetSingleUser(db *mongo.Database) error {
+	collection := db.Collection("user")
 	var user User
-	err := collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
-	if err != nil {
-		return nil, err
+	filter := bson.M{"email": u.PrimaryEmail}
+	if u.ID != uuid.Nil {
+		filter["id"] = u.ID
 	}
-	return &user, nil
-}
-
-func (u *User) DeleteUser(db *mongo.Database) error {
-	collection := db.Collection("users")
-	_, err := collection.DeleteOne(context.Background(), bson.M{"email": u.Email})
+	err := collection.FindOne(context.Background(), filter).Decode(&user)
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil
-		}
 		return err
 	}
 	return nil
 }
 
-func (u *User) ConfirmUser(db *mongo.Database) error {
-	collection := db.Collection("users")
-	_, err := collection.UpdateOne(context.Background(), bson.M{"email": u.Email}, bson.M{"$set": bson.M{"isConfirmed": true}})
+func (u *UserAccount) ConfirmUser(db *mongo.Database) error {
+	collection := db.Collection("userAccount")
+	filter := bson.M{"email": u.Email, "userId": u.UserID, "role": u.Role}
+	update := bson.M{"$set": bson.M{"isConfirmed": true}}
+	_, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		return err
 	}
