@@ -63,6 +63,16 @@ func (svc *UserService) CreateNewUserAccount(c *gin.Context) {
 				IsConfirmed:  false,
 				IsActive:     true,
 			}
+			userRoles, err := patientAccount.GetAllUserRoles(svc.DB)
+			if err != nil {
+				svc.Logger.Errorf(c.Request, "Error getting user roles: %v", err)
+				return nil, fmt.Errorf("get user roles failed: %w", err)
+			}
+			if _, ok := userRoles[req.Role]; ok {
+				svc.Logger.Errorf(c.Request, "User already has this role: %s", req.Role)
+				return nil, fmt.Errorf("user already has this role: %w", err)
+			}
+
 			err = patientAccount.CreateNewUserAccount(svc.DB, sessCtx)
 			if err != nil {
 				svc.Logger.Errorf(c.Request, "Error creating patient account: %v", err)

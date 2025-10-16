@@ -13,9 +13,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// ValidateTokenRequest is the request body for the ValidateToken endpoint
-// Token is sent to the endpoint in the Authorization header as `X-USER-TOKEN`
-func ValidateCreateProviderAccountRequest(c *gin.Context) {
+func SuperAdminOnly(c *gin.Context) {
 	authToken := c.GetHeader("X-USER-TOKEN")
 	if authToken == "" {
 		log.Printf("No token provided")
@@ -23,6 +21,7 @@ func ValidateCreateProviderAccountRequest(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
 	authUser, err := token.ValidateVerificationToken(authToken)
 	if err != nil {
 		log.Printf("Error validating token: %v", err)
@@ -34,7 +33,37 @@ func ValidateCreateProviderAccountRequest(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
 		return
 	}
-	
+	c.Set(ReqBodyAuthUser, authUser)
+	c.Next()
+}
+
+func AdminsOnly(c *gin.Context) {
+	authToken := c.GetHeader("X-USER-TOKEN")
+	if authToken == "" {
+		log.Printf("No token provided")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		c.Abort()
+		return
+	}
+
+	authUser, err := token.ValidateVerificationToken(authToken)
+	if err != nil {
+		log.Printf("Error validating token: %v", err)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if authUser.Role != string(model.RoleHospitalAdmin) && authUser.Role != string(model.RolePharmacyAdmin) && authUser.Role != string(model.RoleSuperAdmin) {
+		log.Printf("Only admins can create provider accounts")
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+	c.Set(ReqBodyAuthUser, authUser)
+	c.Next()
+}
+
+// ValidateTokenRequest is the request body for the ValidateToken endpoint
+// Token is sent to the endpoint in the Authorization header as `X-USER-TOKEN`
+func ValidateCreateProviderAccountRequest(c *gin.Context) {
 	req := dto.CreateProviderAccountRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -99,7 +128,6 @@ func ValidateCreateNewUserAccountRequest(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	// TODO: Only super admin can create new users
 
 	if req.Password == "" {
 		log.Printf("Password is required")

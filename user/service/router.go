@@ -9,10 +9,10 @@ import (
 func NewUserRouter(svc *UserService) *gin.Engine {
 	r := gin.Default()
 
-	r.POST("/health-tech/user", middleware.ValidateCreateNewUserAccountRequest, svc.CreateNewUserAccount)
+	r.POST("/health-tech/user", middleware.SuperAdminOnly, middleware.ValidateCreateNewUserAccountRequest, svc.CreateNewUserAccount)
 	r.GET("/health-tech/user", svc.GetUsers)
 	r.GET("/health-tech/user/confirm", middleware.ValidateConfirmUserRequest, svc.ConfirmUser)
-	r.POST("/health-tech/user/healthcare-providers", middleware.ValidateCreateProviderAccountRequest, svc.CreateProviderAccount)
+	r.POST("/health-tech/user/healthcare-providers", middleware.AdminsOnly, middleware.ValidateCreateProviderAccountRequest, svc.CreateProviderAccount)
 
 	return r
 }
