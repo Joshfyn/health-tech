@@ -15,14 +15,14 @@ const (
 
 	// Base URL for the API endpoint that will handle the verification request
 	scheme  = "http"
-	baseURL = "%s://%s/health-tech/confirm"
+	confirmationBaseURL = "%s://%s/health-tech/user/confirm"
 )
 
 // SendConfirmationEmail sends a verification link containing the JWT.
 func SendConfirmationEmail(recipientEmail, jwtToken string) error {
 
 	// 1. CONSTRUCT THE FULL VERIFICATION URL
-	verificationURL := fmt.Sprintf("%s?token=%s", fmt.Sprintf(baseURL, scheme, lib.GetServiceHostWithPort("user")), jwtToken)
+	verificationURL := fmt.Sprintf("%s?token=%s", fmt.Sprintf(confirmationBaseURL, scheme, lib.GetServiceHostWithPort("user")), jwtToken)
 
 	// 2. BUILD THE EMAIL CONTENT
 	msg := gomail.NewMessage()
