@@ -10,15 +10,15 @@ import (
 )
 
 type Auth struct {
-	UserID       string         `json:"-"`
-	Email        string         `json:"-"`
-	Role         model.UserRole `json:"-"`
-	PasswordHash string         `json:"-"`
+	RoleAccountId string         `json:"-"`
+	Email         string         `json:"-"`
+	Role          model.UserRole `json:"-"`
+	PasswordHash  string         `json:"-"`
 }
 
 func (a *Auth) GetUserByEmail(db *mongo.Database) error {
-	var user model.UserAccount
-	collection := db.Collection("userAccount")
+	var user model.RoleAccount
+	collection := db.Collection("roleAccount")
 	err := collection.FindOne(context.Background(), bson.M{
 		"email":       a.Email,
 		"isConfirmed": true,
@@ -29,7 +29,7 @@ func (a *Auth) GetUserByEmail(db *mongo.Database) error {
 	if err != nil {
 		return err
 	}
-	a.UserID = user.UserAccountID.String()
+	a.RoleAccountId = user.RoleAccountID.String()
 	a.PasswordHash = user.PasswordHash
 	a.Role = user.Role
 	return nil

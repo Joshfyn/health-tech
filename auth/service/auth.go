@@ -41,11 +41,11 @@ func (svc *AuthService) SignInUser(c *gin.Context) {
 	}
 
 	// generate token
-	tokenStr, err := token.GenerateToken(token.TokenRequirements{Email: req.Email, UserID: auth.UserID, Role: string(auth.Role)})
+	tokenStr, err := token.GenerateToken(token.TokenRequirements{Email: req.Email, UserID: auth.RoleAccountId, Role: string(auth.Role)})
 	if err != nil {
 		svc.Logger.
 			WithField("email", req.Email).
-			WithField("user_id", auth.UserID).
+			WithField("user_id", auth.RoleAccountId).
 			Errorf(c.Request, "Error generating token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
