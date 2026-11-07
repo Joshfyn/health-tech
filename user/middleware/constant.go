@@ -1,6 +1,9 @@
 package middleware
 
 const (
-	AuthHeader                = "Authorization"
-	ReqBodyCreateNewUserNoPwd = "create_new_user_no_pwd"
+	AuthHeader                   = "Authorization"
+	ReqBodyCreateNewUserAccount  = "create_new_user_account"
+	ReqBodyConfirmUser           = "confirm_user"
+	ReqBodyCreateProviderAccount = "create_provider_account"
+	ReqBodyAuthUser              = "auth_user"
 )

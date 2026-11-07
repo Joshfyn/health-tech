@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"health-tech/auth/dto"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,28 @@ func ValidateTokenRequest(c *gin.Context) {
 	req := dto.ValidateTokenRequest{
 		Token: token,
 	}
-	
+
 	c.Set(ReqBodyValidateToken, req)
+	c.Next()
+}
+
+func ValidateSignInUserRequest(c *gin.Context) {
+	req := dto.SignInUserRequest{}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	if req.Email == "" {
+		log.Printf("Email is required")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "email is required"})
+		return
+	}
+	if req.Password == "" {
+		log.Printf("Password is required")
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "password is required"})
+		return
+	}
+
+	c.Set(ReqBodySignInUser, req)
 	c.Next()
 }

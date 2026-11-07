@@ -9,7 +9,7 @@ import (
 func NewAuthRouter(svc *AuthService) *gin.Engine {
 	r := gin.Default()
 
-	r.POST("/health-tech/auth/signin", svc.SignInUser)
+	r.POST("/health-tech/auth/signin", middleware.ValidateSignInUserRequest, svc.SignInUser)
 
 	r.GET("/health-tech/auth/validate", middleware.ValidateTokenRequest, svc.ValidateToken)
 
